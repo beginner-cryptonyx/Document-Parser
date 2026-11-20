@@ -3,6 +3,8 @@ from typing import Annotated
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+import package
+
 app = FastAPI()
 
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"])
