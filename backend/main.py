@@ -17,16 +17,36 @@ def health_check():
 
 
 @app.post("/api/upload-file")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), session_id: str|None = None):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
 
-    contents = await file.read()
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session ID is required")
+
+    filename = Path(file.filename).name
+    if not filename or filename in {".", ".."}:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    base_path = BASE_DIR.resolve()
+    session_path = (BASE_DIR / session_id).resolve()
+    if base_path not in session_path.parents:
+        raise HTTPException(status_code=400, detail="Invalid session ID")
+
+    try:
+        session_path.mkdir(parents=True, exist_ok=True)
+        contents = await file.read()
+        destination = session_path / filename
+        destination.write_bytes(contents)
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail="Unable to save file") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Unable to process file") from exc
 
     file_size = len(contents)
 
     return {
-        "filename": file.filename,
+        "filename": filename,
         "content_type": file.content_type,
         "file_size": file_size,
     }

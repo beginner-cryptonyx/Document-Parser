@@ -12,6 +12,7 @@ interface UploadFileProps {
 	setStatus: (value: fileUploadStatus) => void;
 	selectedFile: File | null;
 	setSelectedFiles: (file: File | null) => void;
+	sessionID: string
 }
 
 export default function UploadFile({
@@ -19,8 +20,10 @@ export default function UploadFile({
 	setStatus,
 	selectedFile,
 	setSelectedFiles,
+	sessionID
 }: UploadFileProps) {
 	const [returnData, setReturnData] = useState<UploadResult | null>(null);
+	const [errorMessage, setErrorMessage] = useState<string|null>(null)
 
 	function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
 		const files = event.target.files;
@@ -46,7 +49,7 @@ export default function UploadFile({
 		try {
 			console.log("starting upload");
 
-			const res = await fetch("api/upload-file", {
+			const res = await fetch(`api/upload-file?session_id=${sessionID}`, {
 				method: "POST",
 				body: formData,
 			});
@@ -55,6 +58,8 @@ export default function UploadFile({
 
 			if (!res.ok) {
 				setStatus("error");
+				const errorData = await res.json()
+				setErrorMessage(errorData.detail)
 			} else {
 				setStatus("success");
 				const data: UploadResult = await res.json();
@@ -97,7 +102,8 @@ export default function UploadFile({
 					</ul>
 				</div>
 			)}
-			{status === "error" && <p>Failed to upload file.</p>}
+			{status === "error" && <p>Failed to upload file: </p>}
+			{status === "error" && (errorMessage)}
 		</div>
 	);
 }

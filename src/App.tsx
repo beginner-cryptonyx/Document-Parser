@@ -4,8 +4,8 @@ import { type fileUploadStatus } from "./types";
 import ViewFile from "./components/ViewFile";
 import Workspace from "./components/Workspace";
 
-interface StartSessionResponse{
-	SessionID: string
+interface StartSessionResponse {
+	SessionID: string;
 }
 
 export default function App() {
@@ -29,10 +29,9 @@ export default function App() {
 		async function startSession() {
 			const req = await fetch("/api/start-session");
 
-
 			if (req.ok) {
-				const response: StartSessionResponse = await req.json()
-				setSessionID(response.SessionID)
+				const response: StartSessionResponse = await req.json();
+				setSessionID(response.SessionID);
 			}
 		}
 
@@ -40,19 +39,22 @@ export default function App() {
 	}, []);
 
 	return (
-		<div>
-			<p>{sessionID}</p>
-			<button onClick={checkHealth}>check health</button>
-			<p>Health: {health}</p>
-			<UploadFile
-				selectedFile={selectedFile}
-				status={uploadStatus}
-				setSelectedFiles={setSelectedFiles}
-				setStatus={setUploadStatus}
-			/>
-			{uploadStatus === "success" && selectedFile && (
-				<Workspace file={selectedFile}></Workspace>
-			)}
-		</div>
+		sessionID && (
+			<div>
+				<p>{sessionID}</p>
+				<button onClick={checkHealth}>check health</button>
+				<p>Health: {health}</p>
+				<UploadFile
+					selectedFile={selectedFile}
+					status={uploadStatus}
+					setSelectedFiles={setSelectedFiles}
+					setStatus={setUploadStatus}
+					sessionID={sessionID}
+				/>
+				{uploadStatus === "success" && selectedFile && (
+					<Workspace file={selectedFile}></Workspace>
+				)}
+			</div>
+		)
 	);
 }
