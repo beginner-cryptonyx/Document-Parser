@@ -30,3 +30,7 @@ dist-ssr
 .pyc
 *.pyc?
 *.cpython-311.*
+
+
+# project specific
+/backend/upload
