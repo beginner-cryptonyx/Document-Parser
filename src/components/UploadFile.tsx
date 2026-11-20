@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import type { fileUploadStatus } from "../types";
 
 interface UploadResult {
 	filename: string;
@@ -6,12 +7,20 @@ interface UploadResult {
 	file_size: any;
 }
 
-export default function UploadFile() {
-	const [selectedFile, setSelectedFiles] = useState<File | null>(null);
+interface UploadFileProps {
+	status: fileUploadStatus;
+	setStatus: (value: fileUploadStatus) => void;
+	selectedFile: File | null;
+	setSelectedFiles: (file: File | null) => void;
+}
+
+export default function UploadFile({
+	status,
+	setStatus,
+	selectedFile,
+	setSelectedFiles,
+}: UploadFileProps) {
 	const [returnData, setReturnData] = useState<UploadResult | null>(null);
-	const [status, setStatus] = useState<
-		"idle" | "uploading" | "success" | "error" | "selected"
-	>("idle");
 
 	function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
 		const files = event.target.files;
