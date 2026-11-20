@@ -1,11 +1,17 @@
 import UploadFile from "./components/UploadFile";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { type fileUploadStatus } from "./types";
 import ViewFile from "./components/ViewFile";
+import Workspace from "./components/Workspace";
+
+interface StartSessionResponse{
+	SessionID: string
+}
 
 export default function App() {
 	const [uploadStatus, setUploadStatus] = useState<fileUploadStatus>("idle");
 	const [selectedFile, setSelectedFiles] = useState<File | null>(null);
+	const [sessionID, setSessionID] = useState<string | null>(null);
 
 	const [health, setHeath] = useState<"Healthy" | "Unhealthy" | "Unknown">(
 		"Unknown",
@@ -19,8 +25,23 @@ export default function App() {
 		}
 	}
 
+	useEffect(() => {
+		async function startSession() {
+			const req = await fetch("/api/start-session");
+
+
+			if (req.ok) {
+				const response: StartSessionResponse = await req.json()
+				setSessionID(response.SessionID)
+			}
+		}
+
+		void startSession();
+	}, []);
+
 	return (
 		<div>
+			<p>{sessionID}</p>
 			<button onClick={checkHealth}>check health</button>
 			<p>Health: {health}</p>
 			<UploadFile
@@ -29,7 +50,9 @@ export default function App() {
 				setSelectedFiles={setSelectedFiles}
 				setStatus={setUploadStatus}
 			/>
-			{uploadStatus === "success" && (<ViewFile file={selectedFile}></ViewFile>)}
+			{uploadStatus === "success" && selectedFile && (
+				<Workspace file={selectedFile}></Workspace>
+			)}
 		</div>
 	);
 }
