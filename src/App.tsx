@@ -1,6 +1,7 @@
 import UploadFile from "./components/UploadFile";
 import { useState } from "react";
 import { type fileUploadStatus } from "./types";
+import ViewFile from "./components/ViewFile";
 
 export default function App() {
 	const [uploadStatus, setUploadStatus] = useState<fileUploadStatus>("idle");
@@ -28,6 +29,7 @@ export default function App() {
 				setSelectedFiles={setSelectedFiles}
 				setStatus={setUploadStatus}
 			/>
+			{uploadStatus === "success" && (<ViewFile file={selectedFile}></ViewFile>)}
 		</div>
 	);
 }
