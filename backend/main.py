@@ -3,7 +3,8 @@ import os
 import uuid
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import package
+from package.OCR import OCR 
+from request_types import StartParseRequest
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"])
@@ -57,3 +58,34 @@ def start_session():
     session_path = BASE_DIR / session_id
     session_path.mkdir(parents=True, exist_ok=True)
     return {"SessionID": str(session_id)}
+
+@app.post("/api/start-parse")
+def start_parse(ParseParams: StartParseRequest):
+    if not ParseParams.session_id:
+        raise HTTPException(status_code=400, detail="Session ID is required")
+    
+    converter = OCR(
+        detect_formula=ParseParams.detect_formula,
+        detect_table_structure=ParseParams.detect_table_structure,
+        lang_list=ParseParams.lang_list
+    )
+    
+    session_path = BASE_DIR / ParseParams.session_id
+    
+    input_file_path = session_path / ParseParams.filename   
+    output_file_path = session_path / f"{Path(ParseParams.filename).stem}_output.json"
+    
+    if not session_path.exists() or not session_path.is_dir():
+        raise HTTPException(status_code=400, detail="Invalid session ID")
+    
+    try: 
+        converter.convert_document(
+            file_path=str(input_file_path),
+            output_json_path=str(output_file_path)
+        )
+        
+        return {"message": "Document conversion successful", "output_file": str(output_file_path)}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Error during document conversion") from exc
+    
+    

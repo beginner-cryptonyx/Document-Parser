@@ -52,7 +52,7 @@ export default function App() {
 					sessionID={sessionID}
 				/>
 				{uploadStatus === "success" && selectedFile && (
-					<Workspace file={selectedFile}></Workspace>
+					<Workspace file={selectedFile} sessionID={sessionID}></Workspace>
 				)}
 			</div>
 		)
