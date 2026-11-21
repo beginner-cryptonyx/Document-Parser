@@ -35,13 +35,11 @@ class OCR:
         ],
         detect_table_structure: bool = True,
         detect_formula: bool = True,
-    ):  
-        
-        
+    ):
+
         if not lang_list:
             lang_list = ["eng"]
-            
-            
+
         for lang in lang_list:
             if lang not in [
                 "eng",
@@ -58,8 +56,7 @@ class OCR:
                 "asm",
             ]:
                 raise ValueError(f"Invalid language code: {lang}")
-            
-            
+
         self.indian_langs = lang_list
 
         self.ocr_options = TesseractCliOcrOptions(
@@ -94,5 +91,26 @@ class OCR:
 
     def convert_document(self, file_path: str, output_json_path: str):
         result = self.converter.convert(Path(file_path))
-        result.document.save_as_json(output_json_path)
+        doc = result.document
 
+        for item, _ in doc.iterate_items():
+            for prov in getattr(item, "prov", []):
+                page_h = doc.pages[prov.page_no].size.height
+                bbox = prov.bbox.to_top_left_origin(page_h)
+                bbox.l, bbox.t, bbox.r, bbox.b = (
+                    int(round(bbox.l)),
+                    int(round(bbox.t)),
+                    int(round(bbox.r)),
+                    int(round(bbox.b)),
+                )
+                prov.bbox = bbox
+
+        doc.save_as_json(output_json_path)
+
+
+if __name__ == "__main__":
+    img_path = Path(__file__).parent / "test/test1.jpg"
+    json_path = Path(__file__).parent / "test/output.json"
+
+    ocr = OCR()
+    ocr.convert_document(str(img_path), str(json_path))
