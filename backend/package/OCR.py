@@ -14,48 +14,85 @@ from docling.datamodel.pipeline_options import (
     TableStructureOptions,
 )
 
-indian_langs = [
-    "eng",
-    "hin",
-    "mar",
-    "ben",
-    "tam",
-    "tel",
-    "kan",
-    "mal",
-    "guj",
-    "pan",
-    "ori",
-    "asm",
-]
 
+class OCR:
 
-ocr_options = TesseractCliOcrOptions(
-    lang=indian_langs,
-)
+    def __init__(
+        self,
+        lang_list: list[str] | None = [
+            "eng",
+            "hin",
+            "mar",
+            "ben",
+            "tam",
+            "tel",
+            "kan",
+            "mal",
+            "guj",
+            "pan",
+            "ori",
+            "asm",
+        ],
+        detect_table_structure: bool = True,
+        detect_formula: bool = True,
+    ):  
+        
+        
+        if not lang_list:
+            lang_list = ["eng"]
+            
+            
+        for lang in lang_list:
+            if lang not in [
+                "eng",
+                "hin",
+                "mar",
+                "ben",
+                "tam",
+                "tel",
+                "kan",
+                "mal",
+                "guj",
+                "pan",
+                "ori",
+                "asm",
+            ]:
+                raise ValueError(f"Invalid language code: {lang}")
+            
+            
+        self.indian_langs = lang_list
 
-ocr_options.force_full_page_ocr = True
+        self.ocr_options = TesseractCliOcrOptions(
+            lang=self.indian_langs,
+        )
 
+        self.ocr_options.force_full_page_ocr = True
 
-pipeline_options = PdfPipelineOptions()
-pipeline_options.do_ocr = True
-pipeline_options.ocr_options = ocr_options
+        self.pipeline_options = PdfPipelineOptions()
+        self.pipeline_options.do_ocr = True
+        self.pipeline_options.ocr_options = self.ocr_options
 
-pipeline_options.do_table_structure = True
-pipeline_options.table_structure_options = TableStructureOptions(
-    mode=TableFormerMode.ACCURATE
-)
-pipeline_options.do_formula_enrichment = True
+        self.pipeline_options.do_table_structure = detect_table_structure
+        self.pipeline_options.table_structure_options = TableStructureOptions(
+            mode=TableFormerMode.ACCURATE
+        )
+        self.pipeline_options.do_formula_enrichment = detect_formula
 
-pipeline_options.generate_picture_images = True
-pipeline_options.images_scale = 2.0
+        self.pipeline_options.generate_picture_images = True
+        self.pipeline_options.images_scale = 2.0
 
-converter = DocumentConverter(
-    format_options={
-        InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
-        InputFormat.IMAGE: ImageFormatOption(pipeline_options=pipeline_options),
-    }
-)
+        self.converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(
+                    pipeline_options=self.pipeline_options
+                ),
+                InputFormat.IMAGE: ImageFormatOption(
+                    pipeline_options=self.pipeline_options
+                ),
+            }
+        )
 
-result = converter.convert(Path("./backend/package/test/test1.jpg"))
-result.document.save_as_json("output.json")
+    def convert_document(self, file_path: str, output_json_path: str):
+        result = self.converter.convert(Path(file_path))
+        result.document.save_as_json(output_json_path)
+
