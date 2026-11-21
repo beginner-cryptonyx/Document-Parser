@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-interface ViewFileProps {
-	file: File|null;
+export interface ViewFileProps {
+	file: File | null;
 }
 
 export default function ViewFile({ file }: ViewFileProps) {
@@ -14,7 +14,7 @@ export default function ViewFile({ file }: ViewFileProps) {
 	useEffect(() => {
 		if (!file) {
 			setPreviewUrl(null);
-			return;
+			return;	
 		}
 
 		// Create a temporary local URL for the File object
