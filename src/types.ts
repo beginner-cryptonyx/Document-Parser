@@ -5,6 +5,7 @@ export type Block = {
   text: string;      // current, editable
   original: string;  // OCR output, never mutated
   t: number; l: number; r: number; b: number; // normalized 0..1, top-left origin
+  charspan: number; // number of characters in the text
   confidence?: number;
 };
 

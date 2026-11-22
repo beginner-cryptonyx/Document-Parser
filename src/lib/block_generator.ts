@@ -13,13 +13,14 @@ export default function generateBlocksFromOCR(ocrData: any): Block[] {
         const text_element = text.text;
 
         blocks.push({
-            id: Math.random().toString(36).substring(2, 15), 
+            id: text.self_ref,
             text: text_element,
             original: originalText,
             l: bbox.l,
             t: bbox.t,
             r: bbox.r,
             b: bbox.b,
+            charspan: originalText.length
         });
     }
 

@@ -6,6 +6,7 @@ interface EditorProps {
 	pageWidth: number;
 	pageHeight: number;
 	blocks: Block[];
+    onEditBlock: (id:string, newText:string) => void
 }
 
 export default function Editor({
@@ -13,6 +14,7 @@ export default function Editor({
 	pageHeight,
 	pageWidth,
 	blocks,
+    onEditBlock
 }: EditorProps) {
 	const ref = useRef<HTMLDivElement>(null);
 	const [scale, setScale] = useState(1);
@@ -42,13 +44,19 @@ export default function Editor({
 				// const lines = Math.max(1, b.text.split("\n").length);
 				const fontPx = Math.max(
 					12,
-					(((b.b-b.t)  * scale)) * 0.75,
+					// (((b.b-b.t)  * scale)) * 0.75,
+					// custom formula
+					Math.sqrt(
+						((b.r - b.l) * (b.b - b.t) * scale * scale) /
+							Math.max(1, b.charspan*1.1),
+					),
 				);
 				const edited = b.text !== b.original;
 				// const lowConf = (b.confidence ?? 1) < 0.8;
 
 				return (
 					<textarea
+                        onChange={(e) => onEditBlock(b.id, e.target.value)}
 						key={b.id}
 						value={b.text}
 						// onChange={(e) => onTextChange(b.id, e.target.value)}
@@ -62,16 +70,15 @@ export default function Editor({
 							// 	: "border-sky-300",
 						].join(" ")}
 						style={{
-							left: `${b.l*100/pageWidth}%`,
-							top: `${b.t * 100/pageHeight}%`,
-							width: `${(b.r-b.l)*scale}px`,
-							height: `${(b.b-b.t)*scale}px`,
+							left: `${(b.l * 100) / pageWidth}%`,
+							top: `${(b.t * 100) / pageHeight}%`,
+							width: `${(b.r - b.l) * scale}px`,
+							height: `${(b.b - b.t) * scale}px`,
 							fontSize: fontPx,
 						}}
 					/>
 				);
 			})}
-
 		</div>
 	);
 }
