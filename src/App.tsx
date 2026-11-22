@@ -1,6 +1,6 @@
 import UploadFile from "./components/UploadFile";
 import { useState, useEffect } from "react";
-import { type fileUploadStatus } from "./types";
+import { type Block, type fileUploadStatus } from "./types";
 import ViewFile from "./components/ViewFile";
 import Workspace from "./components/Workspace";
 import Editor from "./components/Editor";
@@ -42,7 +42,13 @@ export default function App() {
 
 	// temp code
 	const [parsed, setParsed] = useState<boolean>(false);
-	const [blocks, setBlocks] = useState<any>(null);
+	const [blocks, setBlocks] = useState<Block[]>();
+	const [jsonOutput, setJsonOutput] = useState<Block[]>();
+	function handleTextChange(id: string, newText: string) {
+		setBlocks((prev) =>
+			prev?.map((b) => (b.id === id ? { ...b, text: newText } : b)),
+		);
+	}
 	useEffect(() => {
 		if (!parsed) return; // Don't fetch before parsing finishes
 
@@ -61,7 +67,7 @@ export default function App() {
 
 				const generated_blocks = generateBlocksFromOCR(data);
 				setBlocks(generated_blocks);
-				console.log(blocks)
+				console.log(blocks);
 			} catch (error) {
 				console.error("Failed to load JSON:", error);
 			}
@@ -69,6 +75,30 @@ export default function App() {
 
 		getOCRData();
 	}, [parsed, sessionID]);
+
+	async function HandleEdit(new_data: Block[]) {
+		try {
+			const payload = {
+				new_data: new_data,
+				session_id: "ztest"
+			}
+			const response = await fetch("/api/edit-json", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
+
+			if (!response.ok) {
+				const res = await response.json()
+				console.log(res.detail)
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+			const data = await response.json();
+			console.log(data);
+		} catch (err) {
+			console.log("Could not edit file, error: ", err);
+		}
+	}
 
 	//temp code end
 
@@ -91,13 +121,33 @@ export default function App() {
 						sessionID={sessionID}
 					></Workspace>
 				)}
-				<button className="p-3 bg-accent" onClick={() => setParsed(true)}> Test Editor </button>
-				{blocks && <Editor
-					blocks={blocks}
-					imageUrl={`http://localhost:8000/uploads/ztest/processed_image.jpg`}
-					pageHeight={1778}
-					pageWidth={1296}
-				></Editor>}
+				<button
+					className="p-3 bg-accent"
+					onClick={() => setParsed(true)}
+				>
+					{" "}
+					Test Editor{" "}
+				</button>
+				{blocks && (
+					<div className="w-[70vw]">
+						<Editor
+							blocks={blocks}
+							imageUrl={`http://localhost:8000/uploads/ztest/processed_image.jpg`}
+							pageHeight={1778}
+							pageWidth={1296}
+							onEditBlock={handleTextChange}
+						></Editor>
+						<button
+							className="p-5 bg-accent"
+							onClick={() => {
+								console.log(JSON.stringify(blocks));
+								HandleEdit(blocks);
+							}}
+						>
+							Confirm changes
+						</button>
+					</div>
+				)}
 			</div>
 		)
 	);

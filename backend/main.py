@@ -5,7 +5,8 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from package.OCR import OCR
 from package.ImageProcessing import ImageProcessor
-from request_types import StartParseRequest
+from package.FileHandling import update_json 
+from request_types import StartParseRequest, EditJsonRequest
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
@@ -103,4 +104,38 @@ def start_parse(ParseParams: StartParseRequest):
     except Exception as exc:
         raise HTTPException(
             status_code=500, detail="Error during document conversion"
+        ) from exc
+
+@app.post("/api/edit-json")
+def edit_json(EditJsonRequest: EditJsonRequest):
+    session_id = EditJsonRequest.session_id
+    new_data = EditJsonRequest.new_data
+
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session ID is required")
+
+    session_path = BASE_DIR / session_id
+    input_json_path = session_path / "output.json"
+    output_json_path = session_path / "output_updated.json"
+    print(f"Input JSON Path: {input_json_path}")
+    print(f"Output JSON Path: {output_json_path}")
+
+    if not session_path.exists() or not session_path.is_dir():
+        raise HTTPException(status_code=400, detail="Invalid session ID")
+
+    try:
+
+        update_json(
+            json_path_input=str(input_json_path),
+            json_path_output=str(output_json_path),
+            new_data=new_data,
+        )
+
+        return {
+            "message": "JSON update successful",
+            "output_file": str(output_json_path),
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500, detail="Error during JSON update"
         ) from exc

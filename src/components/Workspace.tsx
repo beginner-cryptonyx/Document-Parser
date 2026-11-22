@@ -4,15 +4,14 @@ import type { ViewFileProps } from "./ViewFile";
 import ViewFile from "./ViewFile";
 import Editor from "./Editor";
 import generateBlocksFromOCR from "../lib/block_generator";
+import type { Block } from "../types";
 
 interface WorkspaceProps extends ViewFileProps {
 	sessionID: string;
 }
 
 export default function Workspace({ file, sessionID }: WorkspaceProps) {
-	if (file && !file.name) {
-		return;
-	}
+
 
 	const [currentView, setCurrentView] = useState<"Output" | "Editor">(
 		"Output",
@@ -20,7 +19,7 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 
 	const [editorFilePath, setEditorFilePath] = useState<string | null>(null);
 	const [parsed, setParsed] = useState<boolean>(false);
-	const [blocks, setBlocks] = useState<any>(null);
+	const [blocks, setBlocks] = useState<Block[]>();
 	const [imageDimensions, setImageDimensions] = useState<{
 		width: number;
 		height: number;
@@ -72,7 +71,7 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 				console.log(data);
 				setImageDimensions({
 					width: data["pages"]["1"]["size"]["width"],
-					height: data["pages"]["1"]["size"]["width"],
+					height: data["pages"]["1"]["size"]["height"],
 				});
 				const generated_blocks = generateBlocksFromOCR(data);
 				setBlocks(generated_blocks);
@@ -83,6 +82,16 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 
 		getOCRData();
 	}, [parsed, sessionID]);
+
+		if (file && !file.name) {
+		return;
+	}
+
+	function handleTextChange(id: string, newText: string) {
+		setBlocks((prev) =>
+			prev?.map((b) => (b.id === id ? { ...b, text: newText } : b)),
+		);
+	}
 
 	return (
 		<div className="bg-gray-800 p-5">
@@ -96,12 +105,13 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 						selected={currentView}
 						className="w-fit mx-auto"
 					></ChoiceButton>
-					{currentView === "Editor" ? (
+					{currentView === "Editor" && blocks && imageDimensions? (
 						<Editor
 							imageUrl={`http://localhost:8000/uploads/${sessionID}/processed_image.jpg`}
-							blocks={blocks}
+							blocks={blocks!}
 							pageHeight={imageDimensions!.height}
 							pageWidth={imageDimensions!.width}
+							onEditBlock={handleTextChange}
 						></Editor>
 					) : (
 						""

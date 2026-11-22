@@ -6,3 +6,8 @@ class StartParseRequest(BaseModel):
     lang_list: list[str] | None = None
     detect_table_structure: bool = True
     detect_formula: bool = True
+    
+    
+class EditJsonRequest(BaseModel):
+    session_id: str
+    new_data: list[dict]
