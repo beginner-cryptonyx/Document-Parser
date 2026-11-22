@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ChoiceButton from "./small components/ChoiceButton";
 import type { ViewFileProps } from "./ViewFile";
 import ViewFile from "./ViewFile";
 import Editor from "./Editor";
+import generateBlocksFromOCR from "../lib/block_generator";
 
 interface WorkspaceProps extends ViewFileProps {
 	sessionID: string;
@@ -19,6 +20,7 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 
 	const [editorFilePath, setEditorFilePath] = useState<string | null>(null);
 	const [parsed, setParsed] = useState<boolean>(false);
+	const [blocks, setBlocks] = useState<any>(null);
 
 	async function StartParse() {
 		try {
@@ -49,6 +51,31 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 		}
 	}
 
+useEffect(() => {
+	if (!parsed) return; // Don't fetch before parsing finishes
+
+	async function getOCRData() {
+		try {
+			const response = await fetch(
+				`http://localhost:8000/uploads/${sessionID}/output.json`,
+			);
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			console.log(data);
+
+			const generated_blocks = generateBlocksFromOCR(data);
+			setBlocks(generated_blocks);
+		} catch (error) {
+			console.error("Failed to load JSON:", error);
+		}
+	}
+
+	getOCRData();
+}, [parsed, sessionID]);
 	return (
 		<div className="bg-gray-800 p-5">
 			{parsed ? (
@@ -61,7 +88,11 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 						selected={currentView}
 						className="w-fit mx-auto"
 					></ChoiceButton>
-				{currentView === "Editor" ? <Editor sessionID={sessionID}></Editor> : ""}
+					{currentView === "Editor" ? (
+						<Editor sessionID={sessionID} blocks={blocks}></Editor>
+					) : (
+						""
+					)}
 				</div>
 			) : (
 				<div>

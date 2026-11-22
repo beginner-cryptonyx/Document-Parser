@@ -54,6 +54,7 @@ export default function App() {
 				{uploadStatus === "success" && selectedFile && (
 					<Workspace file={selectedFile} sessionID={sessionID}></Workspace>
 				)}
+				
 			</div>
 		)
 	);

@@ -78,7 +78,7 @@ def start_parse(ParseParams: StartParseRequest):
     session_path = BASE_DIR / ParseParams.session_id
 
     input_file_path = session_path / ParseParams.filename
-    output_file_path = session_path / f"{Path(ParseParams.filename).stem}_output.json"
+    output_file_path = session_path / "output.json"
 
     if not session_path.exists() or not session_path.is_dir():
         raise HTTPException(status_code=400, detail="Invalid session ID")
