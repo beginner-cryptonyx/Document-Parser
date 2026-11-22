@@ -1,88 +1,76 @@
 import { useEffect, useRef, useState } from "react";
-import ViewFile from "./ViewFile";
-import { cn, urlToFile } from "../lib/utils";
 import type { Block } from "../types";
 
 interface EditorProps {
-	// filename: string;
-	sessionID: string;
+	imageUrl: string;
+	pageWidth: number;
+	pageHeight: number;
 	blocks: Block[];
 }
 
-interface FileData {
-	filename: string;
-	height: number;
-	width: number;
-}
-
-export default function Editor({ sessionID, blocks }: EditorProps) {
-	const [file, setFile] = useState<File | null>(null);
+export default function Editor({
+	imageUrl,
+	pageHeight,
+	pageWidth,
+	blocks,
+}: EditorProps) {
 	const ref = useRef<HTMLDivElement>(null);
-	const [fileData, setFileData] = useState<FileData | null>(null);
-
-	async function GetJsonData() {
-		try {
-			const response = await fetch(
-				`http://localhost:8000/uploads/${sessionID}/processed_image.jpg`,
-			);
-
-			if (!response.ok) {
-				throw new Error(`HTTP Error! Stats: ${response.status}`);
-			}
-
-			const data = await response.json();
-
-			setFileData({
-				filename: data["origin"]["filename"],
-				height: data["pages"]["1"]["size"]["height"],
-				width: data["pages"]["1"]["size"]["width"],
-			});
-		} catch (err) {
-			console.error("Failed to load JSON: ", err);
-		}
-	}
-	// useEffect(() => {
-	// 	const imageUrl = ;
-
-	// 	urlToFile(imageUrl, "processed_image.jpg")
-	// 		.then((convertedFile) => setFile(convertedFile))
-	// 		.catch((err) =>
-	// 			console.error("Error converting URL to File:", err),
-	// 		);
-	// }, [sessionID]);
+	const [scale, setScale] = useState(1);
+	useEffect(() => {
+		const el = ref.current;
+		if (!el) return;
+		const ro = new ResizeObserver(([entry]) => {
+			setScale(entry.contentRect.width / pageWidth);
+		});
+		ro.observe(el);
+		return () => ro.disconnect();
+	}, [pageWidth]);
 
 	return (
 		<div
-			className={`relative w-full h-[100vw] bg-[url(http://localhost:8000/uploads/${sessionID}/processed_image.jpg)] bg-cover`}
+			ref={ref}
+			className="relative w-screen"
+			style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
 		>
-			{/* <img
-				src={``}
+			<img
+				src={imageUrl}
 				alt=""
 				draggable={false}
-				className="inset-0 h-full w-full"
-			/> */}
-			o
-			{/* {blocks.map((block) => {
-				const lines = Math.max(1, block.text.split("\n").length);
-				const edited = block.text !== block.original;
+				className="absolute inset-0 h-full w-full"
+			/>
+			{blocks.map((b) => {
+				const lines = Math.max(1, b.text.split("\n").length);
+				const fontPx = Math.max(
+					6,
+					((b.h * pageHeight * scale) / lines) * 0.75,
+				);
+				const edited = b.text !== b.original;
+				// const lowConf = (b.confidence ?? 1) < 0.8;
+
 				return (
 					<textarea
-						key={block.id}
-						value={block.text}
-						className={cn(
+						key={b.id}
+						value={b.text}
+						// onChange={(e) => onTextChange(b.id, e.target.value)}
+						spellCheck={false}
+						className={[
 							"absolute resize-none overflow-hidden rounded-sm border px-0.5 leading-tight",
 							"bg-white/60 focus:z-10 focus:overflow-auto focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500",
-							edited && "border-green-500",
-						)}
+							edited ? "border-green-500" : "",
+							// : lowConf
+							// 	? "border-amber-500"
+							// 	: "border-sky-300",
+						].join(" ")}
 						style={{
-							left: `${block.x * 100}%`,
-							top: `${block.y * 100}%`,
-							width: `${block.w * 100}%`,
-							height: `${block.h * 100}%`,
+							left: `${b.x*100/pageWidth}%`,
+							top: `${b.y * 100/pageHeight}%`,
+							width: `${b.w*scale}px`,
+							height: `${b.h*scale}px`,
+							// fontSize: fontPx,
 						}}
-					></textarea>
+					/>
 				);
-			})} */}
+			})}
 		</div>
 	);
 }

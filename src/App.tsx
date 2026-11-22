@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { type fileUploadStatus } from "./types";
 import ViewFile from "./components/ViewFile";
 import Workspace from "./components/Workspace";
+import Editor from "./components/Editor";
+import generateBlocksFromOCR from "./lib/block_generator";
 
 interface StartSessionResponse {
 	SessionID: string;
@@ -38,6 +40,38 @@ export default function App() {
 		void startSession();
 	}, []);
 
+	// temp code
+	const [parsed, setParsed] = useState<boolean>(false);
+	const [blocks, setBlocks] = useState<any>(null);
+	useEffect(() => {
+		if (!parsed) return; // Don't fetch before parsing finishes
+
+		async function getOCRData() {
+			try {
+				const response = await fetch(
+					`http://localhost:8000/uploads/ztest/output.json`,
+				);
+
+				if (!response.ok) {
+					throw new Error(`HTTP error! Status: ${response.status}`);
+				}
+
+				const data = await response.json();
+				console.log(data);
+
+				const generated_blocks = generateBlocksFromOCR(data);
+				setBlocks(generated_blocks);
+				console.log(blocks)
+			} catch (error) {
+				console.error("Failed to load JSON:", error);
+			}
+		}
+
+		getOCRData();
+	}, [parsed, sessionID]);
+
+	//temp code end
+
 	return (
 		sessionID && (
 			<div>
@@ -52,9 +86,18 @@ export default function App() {
 					sessionID={sessionID}
 				/>
 				{uploadStatus === "success" && selectedFile && (
-					<Workspace file={selectedFile} sessionID={sessionID}></Workspace>
+					<Workspace
+						file={selectedFile}
+						sessionID={sessionID}
+					></Workspace>
 				)}
-				
+				<button className="p-3 bg-accent" onClick={() => setParsed(true)}> Test Editor </button>
+				{blocks && <Editor
+					blocks={blocks}
+					imageUrl={`http://localhost:8000/uploads/ztest/processed_image.jpg`}
+					pageHeight={1778}
+					pageWidth={1296}
+				></Editor>}
 			</div>
 		)
 	);

@@ -21,6 +21,10 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 	const [editorFilePath, setEditorFilePath] = useState<string | null>(null);
 	const [parsed, setParsed] = useState<boolean>(false);
 	const [blocks, setBlocks] = useState<any>(null);
+	const [imageDimensions, setImageDimensions] = useState<{
+		width: number;
+		height: number;
+	}>();
 
 	async function StartParse() {
 		try {
@@ -51,31 +55,35 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 		}
 	}
 
-useEffect(() => {
-	if (!parsed) return; // Don't fetch before parsing finishes
+	useEffect(() => {
+		if (!parsed) return; // Don't fetch before parsing finishes
 
-	async function getOCRData() {
-		try {
-			const response = await fetch(
-				`http://localhost:8000/uploads/${sessionID}/output.json`,
-			);
+		async function getOCRData() {
+			try {
+				const response = await fetch(
+					`http://localhost:8000/uploads/${sessionID}/output.json`,
+				);
 
-			if (!response.ok) {
-				throw new Error(`HTTP error! Status: ${response.status}`);
+				if (!response.ok) {
+					throw new Error(`HTTP error! Status: ${response.status}`);
+				}
+
+				const data = await response.json();
+				console.log(data);
+				setImageDimensions({
+					width: data["pages"]["1"]["size"]["width"],
+					height: data["pages"]["1"]["size"]["width"],
+				});
+				const generated_blocks = generateBlocksFromOCR(data);
+				setBlocks(generated_blocks);
+			} catch (error) {
+				console.error("Failed to load JSON:", error);
 			}
-
-			const data = await response.json();
-			console.log(data);
-
-			const generated_blocks = generateBlocksFromOCR(data);
-			setBlocks(generated_blocks);
-		} catch (error) {
-			console.error("Failed to load JSON:", error);
 		}
-	}
 
-	getOCRData();
-}, [parsed, sessionID]);
+		getOCRData();
+	}, [parsed, sessionID]);
+
 	return (
 		<div className="bg-gray-800 p-5">
 			{parsed ? (
@@ -89,7 +97,12 @@ useEffect(() => {
 						className="w-fit mx-auto"
 					></ChoiceButton>
 					{currentView === "Editor" ? (
-						<Editor sessionID={sessionID} blocks={blocks}></Editor>
+						<Editor
+							imageUrl={`http://localhost:8000/uploads/${sessionID}/processed_image.jpg`}
+							blocks={blocks}
+							pageHeight={imageDimensions!.height}
+							pageWidth={imageDimensions!.width}
+						></Editor>
 					) : (
 						""
 					)}
