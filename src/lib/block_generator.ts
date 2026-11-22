@@ -16,11 +16,10 @@ export default function generateBlocksFromOCR(ocrData: any): Block[] {
             id: Math.random().toString(36).substring(2, 15), 
             text: text_element,
             original: originalText,
-            x: bbox.l,
-            y: bbox.t,
-            w: bbox.r - bbox.l,
-            h: bbox.b - bbox.t,
-            // confidence: text.confidence,
+            l: bbox.l,
+            t: bbox.t,
+            r: bbox.r,
+            b: bbox.b,
         });
     }
 

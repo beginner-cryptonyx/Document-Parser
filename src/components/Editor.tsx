@@ -29,7 +29,7 @@ export default function Editor({
 	return (
 		<div
 			ref={ref}
-			className="relative w-screen"
+			className="relative "
 			style={{ aspectRatio: `${pageWidth} / ${pageHeight}` }}
 		>
 			<img
@@ -39,10 +39,10 @@ export default function Editor({
 				className="absolute inset-0 h-full w-full"
 			/>
 			{blocks.map((b) => {
-				const lines = Math.max(1, b.text.split("\n").length);
+				// const lines = Math.max(1, b.text.split("\n").length);
 				const fontPx = Math.max(
-					6,
-					((b.h * pageHeight * scale) / lines) * 0.75,
+					12,
+					(((b.b-b.t)  * scale)) * 0.75,
 				);
 				const edited = b.text !== b.original;
 				// const lowConf = (b.confidence ?? 1) < 0.8;
@@ -62,15 +62,16 @@ export default function Editor({
 							// 	: "border-sky-300",
 						].join(" ")}
 						style={{
-							left: `${b.x*100/pageWidth}%`,
-							top: `${b.y * 100/pageHeight}%`,
-							width: `${b.w*scale}px`,
-							height: `${b.h*scale}px`,
-							// fontSize: fontPx,
+							left: `${b.l*100/pageWidth}%`,
+							top: `${b.t * 100/pageHeight}%`,
+							width: `${(b.r-b.l)*scale}px`,
+							height: `${(b.b-b.t)*scale}px`,
+							fontSize: fontPx,
 						}}
 					/>
 				);
 			})}
+
 		</div>
 	);
 }
