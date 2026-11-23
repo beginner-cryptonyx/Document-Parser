@@ -48,9 +48,55 @@ export default function TextBoundingBox({
 		block.charspan = newText.length;
 	}
 
+	function handleMouseDown(e: React.MouseEvent<HTMLTextAreaElement>) {
+		// Only trigger drag on Left Click (button 0) + Shift key
+		if (e.button !== 0 || !e.shiftKey) return;
+
+		e.preventDefault(); // Prevents text selection while dragging
+		const startX = e.clientX;
+		const startY = e.clientY;
+		const startLeft = position.left;
+		const startTop = position.top;
+
+		function onMouseMove(moveEvent: MouseEvent) {
+			// Divide pixel delta by `scale` to keep coordinates in original image space
+			const dx = (moveEvent.clientX - startX) / scale;
+			const dy = (moveEvent.clientY - startY) / scale;
+
+			const newLeft = startLeft + dx;
+			const newTop = startTop + dy;
+			const newRight = newLeft + position.width;
+			const newBottom = newTop + position.height;
+
+			// Mutate block directly (matching your updateText pattern)
+			block.l = newLeft;
+			block.t = newTop;
+			block.r = newRight;
+			block.b = newBottom;
+
+			// Trigger re-render
+			setPosition((prev) => ({
+				...prev,
+				left: newLeft,
+				top: newTop,
+				right: newRight,
+				bottom: newBottom,
+			}));
+		}
+
+		function onMouseUp() {
+			window.removeEventListener("mousemove", onMouseMove);
+			window.removeEventListener("mouseup", onMouseUp);
+		}
+
+		window.addEventListener("mousemove", onMouseMove);
+		window.addEventListener("mouseup", onMouseUp);
+	}
+
 	return (
 		<textarea
 			onChange={(e) => updateText(e)}
+			onMouseDown={handleMouseDown}
 			// key={}
 			value={text}
 			spellCheck={false}
@@ -63,10 +109,10 @@ export default function TextBoundingBox({
 				// 	: "border-sky-300",
 			].join(" ")}
 			style={{
-				left: `${(block.l * 100) / imageWidth}%`,
-				top: `${(block.t * 100) / imageHeight}%`,
-				width: `${(block.r - block.l) * scale}px`,
-				height: `${(block.b - block.t) * scale}px`,
+				left: `${(position.left * 100) / imageWidth}%`,
+				top: `${(position.top * 100) / imageHeight}%`, 
+				width: `${position.width * scale}px`,
+				height: `${position.height * scale}px`,
 				fontSize: fontSize,
 			}}
 		/>
