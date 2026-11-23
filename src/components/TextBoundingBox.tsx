@@ -33,6 +33,7 @@ export default function TextBoundingBox({
 	});
 
 	const [text, setText] = useState(block.text);
+	const [isDeleted, setIsDeleted] = useState(false);
 	const fontSize = Math.max(
 		12,
 		Math.sqrt(
@@ -93,11 +94,22 @@ export default function TextBoundingBox({
 		window.addEventListener("mouseup", onMouseUp);
 	}
 
+	function handleContextMenu(e: React.MouseEvent<HTMLTextAreaElement>) {
+        
+		e.preventDefault();
+		if (window.confirm("Delete this text box?")) {
+			block.deleted = true
+			setIsDeleted(true);
+		}
+	}
+    if (isDeleted){
+        return null
+    }
 	return (
 		<textarea
 			onChange={(e) => updateText(e)}
 			onMouseDown={handleMouseDown}
-			// key={}
+			onContextMenu={handleContextMenu}
 			value={text}
 			spellCheck={false}
 			className={[
@@ -110,7 +122,7 @@ export default function TextBoundingBox({
 			].join(" ")}
 			style={{
 				left: `${(position.left * 100) / imageWidth}%`,
-				top: `${(position.top * 100) / imageHeight}%`, 
+				top: `${(position.top * 100) / imageHeight}%`,
 				width: `${position.width * scale}px`,
 				height: `${position.height * scale}px`,
 				fontSize: fontSize,
