@@ -27,7 +27,7 @@ def update_json(json_path_input, json_path_output, new_data: list[dict]):
                         "r": update_object["r"],
                         "b": update_object["b"],
                     },
-                    "charspan": [0, update_object["charspan"]],
+                    "charspan": [0, len(update_object["text"])],
                 }
             ]
             item["text"] = update_object["text"]
