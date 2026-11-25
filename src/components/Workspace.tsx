@@ -85,9 +85,9 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 		return;
 	}
 
-	function handleTextChange(id: string, newText: string) {
+	function updateBlock(id: string, patch: Partial<Block>) {
 		setBlocks((prev) =>
-			prev?.map((b) => (b.id === id ? { ...b, text: newText } : b)),
+			prev!.map((b) => (b.id === id ? { ...b, ...patch } : b)),
 		);
 	}
 
@@ -109,7 +109,7 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 							blocks={blocks!}
 							pageHeight={imageDimensions!.height}
 							pageWidth={imageDimensions!.width}
-							onEditBlock={handleTextChange}
+							onEditBlock={updateBlock}
 						></Editor>
 					) : (
 						""

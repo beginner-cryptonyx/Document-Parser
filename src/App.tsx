@@ -46,12 +46,11 @@ export default function App() {
 	const [blocks, setBlocks] = useState<Block[]>();
 	const [jsonOutput, setJsonOutput] = useState<Block[]>();
 
-	
 	function updateBlock(id: string, patch: Partial<Block>) {
 		setBlocks((prev) =>
 			prev!.map((b) => (b.id === id ? { ...b, ...patch } : b)),
 		);
-}
+	}
 	useEffect(() => {
 		if (!parsed) return; // Don't fetch before parsing finishes
 
