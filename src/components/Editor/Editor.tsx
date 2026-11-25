@@ -7,7 +7,7 @@ interface EditorProps {
 	pageWidth: number;
 	pageHeight: number;
 	blocks: Block[];
-	onEditBlock: (id: string, newText: string) => void;
+	onEditBlock: (id: string, patch: Partial<Block>) => void;
 }
 
 export default function Editor({
@@ -15,6 +15,7 @@ export default function Editor({
 	pageHeight,
 	pageWidth,
 	blocks,
+	onEditBlock
 }: EditorProps) {
 	const ref = useRef<HTMLDivElement>(null);
 	const [scale, setScale] = useState(1);
@@ -27,6 +28,7 @@ export default function Editor({
 		ro.observe(el);
 		return () => ro.disconnect();
 	}, [pageWidth]);
+
 
 	return (
 		<div
@@ -48,6 +50,7 @@ export default function Editor({
 						scale={scale}
 						imageHeight={pageHeight}
 						imageWidth={pageWidth}
+						onChange={onEditBlock}
 					></TextBoundingBox>
 				);
 			})}

@@ -45,11 +45,13 @@ export default function App() {
 	const [parsed, setParsed] = useState<boolean>(false);
 	const [blocks, setBlocks] = useState<Block[]>();
 	const [jsonOutput, setJsonOutput] = useState<Block[]>();
-	function handleTextChange(id: string, newText: string) {
+
+	
+	function updateBlock(id: string, patch: Partial<Block>) {
 		setBlocks((prev) =>
-			prev?.map((b) => (b.id === id ? { ...b, text: newText } : b)),
+			prev!.map((b) => (b.id === id ? { ...b, ...patch } : b)),
 		);
-	}
+}
 	useEffect(() => {
 		if (!parsed) return; // Don't fetch before parsing finishes
 
@@ -136,7 +138,7 @@ export default function App() {
 							imageUrl={`http://localhost:8000/uploads/ztest/processed_image.jpg`}
 							pageHeight={1778}
 							pageWidth={1296}
-							onEditBlock={handleTextChange}
+							onEditBlock={updateBlock}
 						></Editor>
 						<button
 							className="p-5 bg-accent"

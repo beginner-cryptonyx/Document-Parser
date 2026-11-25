@@ -16,6 +16,7 @@ interface TextBoundingBoxProps {
 	imageWidth: number;
 	imageHeight: number;
 	scale: number;
+	onChange: (id: string, patch: Partial<Block>) => void;
 }
 
 export default function TextBoundingBox({
@@ -24,35 +25,16 @@ export default function TextBoundingBox({
 	imageHeight,
 	imageWidth,
 	scale = 1,
+	onChange,
 }: TextBoundingBoxProps) {
-	const [position, setPosition] = useState<{
-		top: number;
-		bottom: number;
-		left: number;
-		right: number;
-		height: number;
-		width: number;
-	}>({
-		top: block.top,
-		bottom: block.bottom,
-		left: block.left,
-		right: block.right,
-		height: block.bottom - block.top,
-		width: block.right - block.left,
-	});
+	if (block.deleted) return null;
 
-	const [text, setText] = useState(block.text);
+	const edited = block.text !== block.original;
+	const fontSize = calculateFontSize(block, block.original.length, scale);
+
 	const [isDeleted, setIsDeleted] = useState(false);
-	const fontSize = calculateFontSize(block, block.text.length, scale);
-
-	function updateText(e: React.ChangeEvent<HTMLTextAreaElement>) {
-		const newText = e.target.value;
-		setText(newText);
-		block.text = newText;
-	}
 
 	function handleMouseDown(e: React.MouseEvent<HTMLTextAreaElement>) {
-		// Only trigger drag on Left Click (button 0) + Shift key
 		if (e.button !== 0) return;
 
 		const edges = getEdgesToResize(
@@ -65,45 +47,23 @@ export default function TextBoundingBox({
 		e.preventDefault(); // Prevents text selection while dragging
 		const startX = e.clientX;
 		const startY = e.clientY;
-		const startPos = { ...position };
+		const start = {
+			left: block.left,
+			top: block.top,
+			right: block.right,
+			bottom: block.bottom,
+		};
 
 		function onMouseMove(moveEvent: MouseEvent) {
 			// Divide pixel delta by `scale` to keep coordinates in original image space
 			const dx = (moveEvent.clientX - startX) / scale;
 			const dy = (moveEvent.clientY - startY) / scale;
 
-			let { left, top, right, bottom } = startPos;
+			const newBox = isResizing(edges)
+				? resizeBox(start, edges, dx, dy)
+				: moveBox(start, dx, dy);
 
-			if (isResizing(edges)) {
-				const resized = resizeBox(
-					{ left, top, right, bottom },
-					edges,
-					dx,
-					dy,
-				);
-				left = resized.left;
-				right = resized.right;
-				top = resized.top;
-				bottom = resized.bottom;
-			} else {
-				const moved = moveBox({ left, top, right, bottom }, dx, dy);
-				left = moved.left;
-				right = moved.right;
-				top = moved.top;
-				bottom = moved.bottom;
-			}
-
-			const width = right - left;
-			const height = bottom - top;
-
-			// Mutate block directly (matching your updateText pattern)
-			block.left = left;
-			block.top = top;
-			block.right = right;
-			block.bottom = bottom;
-
-			// Trigger re-render
-			setPosition({ left, top, right, bottom, width, height });
+			onChange(block.id, newBox);
 		}
 
 		function onMouseUp() {
@@ -125,14 +85,27 @@ export default function TextBoundingBox({
 	if (isDeleted) {
 		return null;
 	}
+	function handleMouseMove(e: React.MouseEvent<HTMLTextAreaElement>) {
+		if (e.buttons) return; // a button is held down (mid-drag), leave the cursor alone
+
+		const edges = getEdgesToResize(
+			e,
+			e.currentTarget.getBoundingClientRect(),
+		);
+		e.currentTarget.style.cursor = setAppropriateCursorStyle(
+			edges,
+			e.shiftKey,
+		);
+	}
 
 	return (
 		<textarea
-			onChange={(e) => updateText(e)}
+			onChange={(e) => onChange(block.id, { text: e.target.value })}
 			onMouseDown={handleMouseDown}
 			onMouseLeave={(e) => (e.currentTarget.style.cursor = "text")}
 			onContextMenu={handleContextMenu}
-			value={text}
+			onMouseMove={handleMouseMove}
+			value={block.text}
 			spellCheck={false}
 			className={[
 				"absolute resize-none overflow-hidden rounded-sm border px-0.5 leading-tight",
@@ -143,7 +116,7 @@ export default function TextBoundingBox({
 				// 	: "border-sky-300",
 			].join(" ")}
 			style={{
-				...toPercentStyle(position, imageWidth, imageHeight),
+				...toPercentStyle(block, imageWidth, imageHeight),
 				fontSize: `${fontSize}px`,
 				lineHeight: 1,
 			}}

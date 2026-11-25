@@ -22,10 +22,10 @@ def update_json(json_path_input, json_path_output, new_data: list[dict]):
                 {
                     "page_no": 1,
                     "bbox": {
-                        "l": update_object["l"],
-                        "t": update_object["t"],
-                        "r": update_object["r"],
-                        "b": update_object["b"],
+                        "left": update_object["left"],
+                        "top": update_object["top"],
+                        "right": update_object["right"],
+                        "bottom": update_object["bottom"],
                     },
                     "charspan": [0, len(update_object["text"])],
                 }
