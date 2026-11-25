@@ -78,10 +78,10 @@ export default function TextBoundingBox({
 	function handleContextMenu(e: React.MouseEvent<HTMLTextAreaElement>) {
 		e.preventDefault();
 		if (window.confirm("Delete this text box?")) {
-			block.deleted = true;
-			setIsDeleted(true);
+			onChange(block.id, { deleted: true });
 		}
 	}
+	
 	if (isDeleted) {
 		return null;
 	}
