@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Block } from "../types";
+import type { Block } from "./types";
 import TextBoundingBox from "./TextBoundingBox";
 
 interface EditorProps {

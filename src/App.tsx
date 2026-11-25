@@ -1,9 +1,10 @@
 import UploadFile from "./components/UploadFile";
 import { useState, useEffect } from "react";
-import { type Block, type fileUploadStatus } from "./types";
+import { type fileUploadStatus } from "./types";
+import type { Block } from "./components/Editor/types";
 import ViewFile from "./components/ViewFile";
 import Workspace from "./components/Workspace";
-import Editor from "./components/Editor";
+import Editor from "./components/Editor/Editor";
 import generateBlocksFromOCR from "./lib/block_generator";
 
 interface StartSessionResponse {
@@ -80,8 +81,8 @@ export default function App() {
 		try {
 			const payload = {
 				new_data: new_data,
-				session_id: "ztest"
-			}
+				session_id: "ztest",
+			};
 			const response = await fetch("/api/edit-json", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -89,8 +90,8 @@ export default function App() {
 			});
 
 			if (!response.ok) {
-				const res = await response.json()
-				console.log(res.detail)
+				const res = await response.json();
+				console.log(res.detail);
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
 			const data = await response.json();

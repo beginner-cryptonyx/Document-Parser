@@ -2,17 +2,15 @@ import { useEffect, useState } from "react";
 import ChoiceButton from "./small components/ChoiceButton";
 import type { ViewFileProps } from "./ViewFile";
 import ViewFile from "./ViewFile";
-import Editor from "./Editor";
+import Editor from "./Editor/Editor";
 import generateBlocksFromOCR from "../lib/block_generator";
-import type { Block } from "../types";
+import type { Block } from "./Editor/types";
 
 interface WorkspaceProps extends ViewFileProps {
 	sessionID: string;
 }
 
 export default function Workspace({ file, sessionID }: WorkspaceProps) {
-
-
 	const [currentView, setCurrentView] = useState<"Output" | "Editor">(
 		"Output",
 	);
@@ -83,7 +81,7 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 		getOCRData();
 	}, [parsed, sessionID]);
 
-		if (file && !file.name) {
+	if (file && !file.name) {
 		return;
 	}
 
@@ -105,7 +103,7 @@ export default function Workspace({ file, sessionID }: WorkspaceProps) {
 						selected={currentView}
 						className="w-fit mx-auto"
 					></ChoiceButton>
-					{currentView === "Editor" && blocks && imageDimensions? (
+					{currentView === "Editor" && blocks && imageDimensions ? (
 						<Editor
 							imageUrl={`http://localhost:8000/uploads/${sessionID}/processed_image.jpg`}
 							blocks={blocks!}

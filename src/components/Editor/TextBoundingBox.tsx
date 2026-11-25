@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import type { Block } from "../types";
+import type { Block } from "./types";
+import {
+	toPercentStyle,
+	getEdgesToResize,
+	isResizing,
+	setAppropriateCursorStyle,
+	moveBox,
+	resizeBox,
+	calculateFontSize,
+} from "./Geometry";
 
 interface TextBoundingBoxProps {
 	// key: string
@@ -24,58 +33,39 @@ export default function TextBoundingBox({
 		height: number;
 		width: number;
 	}>({
-		top: block.t,
-		bottom: block.b,
-		left: block.l,
-		right: block.r,
-		height: block.b - block.t,
-		width: block.r - block.l,
+		top: block.top,
+		bottom: block.bottom,
+		left: block.left,
+		right: block.right,
+		height: block.bottom - block.top,
+		width: block.right - block.left,
 	});
 
 	const [text, setText] = useState(block.text);
 	const [isDeleted, setIsDeleted] = useState(false);
-	const fontSize = Math.max(
-		12,
-		Math.sqrt(
-			((block.r - block.l) * (block.b - block.t) * scale * scale) /
-				Math.max(1, block.charspan * 1.1),
-		),
-	);
+	const fontSize = calculateFontSize(block, block.text.length, scale);
 
 	function updateText(e: React.ChangeEvent<HTMLTextAreaElement>) {
 		const newText = e.target.value;
 		setText(newText);
 		block.text = newText;
-		block.charspan = newText.length;
-	}
-
-	function getResizeEdges(e: React.MouseEvent<HTMLTextAreaElement>) {
-		const rect = e.currentTarget.getBoundingClientRect();
-		const threshold = 10; //so basically 10 px arnd the border
-
-		return {
-			top: e.clientY - rect.top <= threshold,
-			bottom: rect.bottom - e.clientY <= threshold,
-			left: e.clientX - rect.left <= threshold,
-			right: rect.right - e.clientX <= threshold,
-		};
 	}
 
 	function handleMouseDown(e: React.MouseEvent<HTMLTextAreaElement>) {
 		// Only trigger drag on Left Click (button 0) + Shift key
 		if (e.button !== 0) return;
 
-		const edges = getResizeEdges(e);
-		const isResizing =
-			edges.top || edges.bottom || edges.left || edges.right;
+		const edges = getEdgesToResize(
+			e,
+			e.currentTarget.getBoundingClientRect(),
+		);
 
-		if (!isResizing && !e.shiftKey) return; // no resize + no shift = do nothing
+		if (!isResizing(edges) && !e.shiftKey) return; // no resize + no shift = do nothing
 
 		e.preventDefault(); // Prevents text selection while dragging
 		const startX = e.clientX;
 		const startY = e.clientY;
 		const startPos = { ...position };
-		const MIN_SIZE = 16;
 
 		function onMouseMove(moveEvent: MouseEvent) {
 			// Divide pixel delta by `scale` to keep coordinates in original image space
@@ -84,31 +74,33 @@ export default function TextBoundingBox({
 
 			let { left, top, right, bottom } = startPos;
 
-			if (isResizing) {
-				if (edges.left)
-					left = Math.min(startPos.left + dx, right - MIN_SIZE);
-				if (edges.right)
-					right = Math.max(startPos.right + dx, left + MIN_SIZE);
-				if (edges.top)
-					top = Math.min(startPos.top + dy, bottom - MIN_SIZE);
-				if (edges.bottom)
-					bottom = Math.max(startPos.bottom + dy, top + MIN_SIZE);
+			if (isResizing(edges)) {
+				const resized = resizeBox(
+					{ left, top, right, bottom },
+					edges,
+					dx,
+					dy,
+				);
+				left = resized.left;
+				right = resized.right;
+				top = resized.top;
+				bottom = resized.bottom;
 			} else {
-				// Shift + drag in center still moves the box
-				left = startPos.left + dx;
-				top = startPos.top + dy;
-				right = left + startPos.width;
-				bottom = top + startPos.height;
+				const moved = moveBox({ left, top, right, bottom }, dx, dy);
+				left = moved.left;
+				right = moved.right;
+				top = moved.top;
+				bottom = moved.bottom;
 			}
 
 			const width = right - left;
 			const height = bottom - top;
 
 			// Mutate block directly (matching your updateText pattern)
-			block.l = left;
-			block.t = top;
-			block.r = right;
-			block.b = bottom;
+			block.left = left;
+			block.top = top;
+			block.right = right;
+			block.bottom = bottom;
 
 			// Trigger re-render
 			setPosition({ left, top, right, bottom, width, height });
@@ -134,21 +126,10 @@ export default function TextBoundingBox({
 		return null;
 	}
 
-	function handleHoverCursor(e: React.MouseEvent<HTMLTextAreaElement>) {
-		const { top, bottom, left, right } = getResizeEdges(e);
-		if ((top && left) || (bottom && right))
-			e.currentTarget.style.cursor = "nwse-resize";
-		else if ((top && right) || (bottom && left))
-			e.currentTarget.style.cursor = "nesw-resize";
-		else if (top || bottom) e.currentTarget.style.cursor = "ns-resize";
-		else if (left || right) e.currentTarget.style.cursor = "ew-resize";
-		else e.currentTarget.style.cursor = e.shiftKey ? "move" : "text";
-	}
 	return (
 		<textarea
 			onChange={(e) => updateText(e)}
 			onMouseDown={handleMouseDown}
-			onMouseMove={handleHoverCursor}
 			onMouseLeave={(e) => (e.currentTarget.style.cursor = "text")}
 			onContextMenu={handleContextMenu}
 			value={text}
@@ -162,11 +143,9 @@ export default function TextBoundingBox({
 				// 	: "border-sky-300",
 			].join(" ")}
 			style={{
-				left: `${(position.left * 100) / imageWidth}%`,
-				top: `${(position.top * 100) / imageHeight}%`,
-				width: `${position.width * scale}px`,
-				height: `${position.height * scale}px`,
-				fontSize: fontSize,
+				...toPercentStyle(position, imageWidth, imageHeight),
+				fontSize: `${fontSize}px`,
+				lineHeight: 1,
 			}}
 		/>
 	);

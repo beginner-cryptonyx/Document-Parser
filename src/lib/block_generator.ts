@@ -1,4 +1,4 @@
-import type { Block } from "../types";
+import type { Block } from "../components/Editor/types";
 
 export default function generateBlocksFromOCR(ocrData: any): Block[] {
     const blocks: Block[] = [];
@@ -16,11 +16,11 @@ export default function generateBlocksFromOCR(ocrData: any): Block[] {
             id: text.self_ref,
             text: text_element,
             original: originalText,
-            l: bbox.l,
-            t: bbox.t,
-            r: bbox.r,
-            b: bbox.b,
-            charspan: originalText.length
+            left: bbox.l,
+            top: bbox.t,
+            right: bbox.r,
+            bottom: bbox.b,
+            deleted: false,
         });
     }
 
